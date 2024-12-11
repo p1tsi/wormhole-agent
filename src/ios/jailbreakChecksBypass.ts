@@ -46,6 +46,15 @@ const paths = [
     "/etc/ssh/sshd_config"
 ];
 
+const url_schemas = [
+    "activator://",
+    "cydia://",
+    "filza://",
+    "sileo://",
+    "undecimus://",
+    "zbra://"
+];
+
 export default function jbcheckbypass() {
     Interceptor.attach(ObjC.classes.NSFileManager["- fileExistsAtPath:"].implementation, {
         onEnter(args) {
@@ -71,9 +80,12 @@ export default function jbcheckbypass() {
     Interceptor.attach(ObjC.classes.UIApplication["- canOpenURL:"].implementation, {
         onEnter(args) {
             this.is_flagged = false;
-            this.path = new ObjC.Object(args[2]).absoluteString();
-            if (this.path.isEqualToString_(ObjC.classes.NSString.stringWithUTF8String_(Memory.allocUtf8String("cydia://")))) {
-                this.is_flagged = true;
+            this.url = new ObjC.Object(args[2]).absoluteString().toString();
+            for (let i in url_schemas){
+                if (this.url.startsWith(url_schemas[i])){
+                    this.is_flagged = true;
+                    break;
+                }
             }
         },
         onLeave(retval) {
@@ -88,5 +100,6 @@ export default function jbcheckbypass() {
             retval.replace(new NativePointer(0x0));
         }
     });
+
     return true;
 }

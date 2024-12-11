@@ -1,3 +1,4 @@
 node_modules
 package-lock.json
 src/ios/hooking/modules/custom/*
+src/macos/hooking/modules/custom/*
