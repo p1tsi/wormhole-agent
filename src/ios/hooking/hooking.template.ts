@@ -18,6 +18,11 @@ import { dyld_functions } from './modules/dyld';
 
 
 function attach_interceptor_to_func(func) {
+    if (func.ptr == 0x0){
+        console.log(func.name + " not found");
+        return;
+    }
+
     Interceptor.attach(
         func.ptr,
         {

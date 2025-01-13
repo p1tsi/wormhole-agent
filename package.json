@@ -1,12 +1,12 @@
 {
   "name": "wormhole-agent",
   "version": "0.1.0",
-  "description": "Agent script to inject to remote process",
+  "description": "Agent script injected inside remote process",
   "homepage": "*",
-  "main": "src/index.ts",
+  "main": "src/index-ios.ts",
   "scripts": {
-    "build": "frida-compile src/index.ts -o ",
-    "watch": "frida-compile src/index.ts -o ../agents/_base_agent.js -w"
+    "build-ios": "frida-compile src/index-ios.ts -o ",
+    "build-macos": "frida-compile src/index-macos.ts -o ",
   },
   "author": "p1tsi",
   "license": "Apache-2.0",
