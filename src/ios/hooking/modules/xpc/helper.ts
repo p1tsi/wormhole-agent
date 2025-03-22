@@ -40,14 +40,11 @@ export function parseXPCConnectionObject(connection: NativePointer){
     connectionObject.setObject_forKey_(xpc_connection_get_euid(connection).toUInt32(), 'euid');
     connectionObject.setObject_forKey_(xpc_connection_get_egid(connection).toUInt32(), 'egid');
     connectionObject.setObject_forKey_(xpc_connection_get_asid(connection).toUInt32(), 'asid');
-    /*let ctx = xpc_connection_get_context(connection);
-    console.log(ctx);
-    if (ctx){
-        let ctxObj = new ObjC.Object(ctx);
-        console.log("CONTEXT:", ctxObj, ctxObj.$className);
-    }*/
-    //connectionObject.setObject_forKey_(xpc_connection_get_context(connection).toString(), 'context');
-    return connectionObject;
+
+    let connJsonData = ObjC.classes.NSJSONSerialization.dataWithJSONObject_options_error_(connectionObject, 0, ptr(0x0));
+    let connJsonStr = ObjC.classes.NSString.alloc().initWithData_encoding_(connJsonData, 0x4);
+
+    return connJsonStr.toString();
 }
 
 
@@ -210,7 +207,12 @@ export function parseXPCDictionaryObject(XPCMessage: NativePointer){
         });
         xpc_dictionary_apply(XPCMessage, applierBlock);
     }
-    return message;
+
+    let jsonData = ObjC.classes.NSJSONSerialization.dataWithJSONObject_options_error_(message, 0, ptr(0x0));
+    let resultMessage = ObjC.classes.NSString.alloc().initWithData_encoding_(jsonData, 0x4);
+    console.log(">", resultMessage);
+
+    return resultMessage.toString();
 }
 
 
