@@ -21,6 +21,7 @@ const paths = [
     "/Library/MobileSubstrate/DynamicLibraries/LiveClock.plist",
     "/Library/MobileSubstrate/DynamicLibraries/Veency.plist",
     "/Library/MobileSubstrate/MobileSubstrate.dylib",
+    "/Library/MobileSubstrate/DynamicLibraries/CepheiSpringBoard.dylib",
     "/pguntether",
     "/private/var/lib/cydia",
     "/private/var/lib/apt",
@@ -37,6 +38,8 @@ const paths = [
     "/usr/libexec/sftp-server",
     "/usr/libexec/ssh-keysign",
     "/usr/sbin/frida-server",
+    "/Library/LaunchDaemons/re.frida.server.plist",
+    "/Library/Caches/re.frida.server",
     "/usr/sbin/sshd",
     "/var/cache/apt",
     "/var/lib/cydia",
@@ -100,6 +103,16 @@ export default function jbcheckbypass() {
             retval.replace(new NativePointer(0x0));
         }
     });
+
+    // TODO: add bypass method that check for open ports (ie: 27042)
+    /*Interceptor.attach(Module.getExportByName(null, "connect"), {
+        onEnter(args) {
+            //console.log("connect");
+        },
+        onLeave(retval) {
+            retval.replace(ptr(0x1));
+        }
+    });*/
 
     return true;
 }

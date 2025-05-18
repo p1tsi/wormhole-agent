@@ -6,7 +6,7 @@
   "main": "src/index-ios.ts",
   "scripts": {
     "build-ios": "frida-compile src/index-ios.ts -o ",
-    "build-macos": "frida-compile src/index-macos.ts -o ",
+    "build-macos": "frida-compile src/index-macos.ts -o "
   },
   "author": "p1tsi",
   "license": "Apache-2.0",

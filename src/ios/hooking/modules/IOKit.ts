@@ -42,7 +42,6 @@ const IOServiceNameMatching: IFunctionPointer = {
     },
 };
 
-
 const IOServiceGetMatchingService: IFunctionPointer = {
     name: 'IOServiceGetMatchingService',
     ptr: Module.getExportByName(libIOKit, "IOServiceGetMatchingService"),
@@ -68,18 +67,19 @@ const IOServiceGetMatchingServices: IFunctionPointer = {
     name: 'IOServiceGetMatchingServices',
     ptr: Module.getExportByName(libIOKit, "IOServiceGetMatchingServices"),
     onEnter: function(args: InvocationArguments){
-        this.existing = args[2];
+        this.d = new ObjC.Object(args[1]).toString();
     },
     onLeave: function(retval: NativePointer){
         send({
-		    type: 'IOKit',
-		    symbol: this.name,
-		    timestamp: Date.now(),
-		    tid: Process.getCurrentThreadId(),
-		    data: {
-		        args: [this.existing],
+            type: 'IOKit',
+            symbol: this.name,
+            timestamp: Date.now(),
+            tid: Process.getCurrentThreadId(),
+            data: {
+                args: [this.d],
+                ret: retval
             }
-	    });
+        });
     }
 };
 
@@ -135,93 +135,65 @@ const IOConnectCallMethod: IFunctionPointer = {
     onEnter: function(args: InvocationArguments){
         this.port = args[0];
         this.sel = args[1].toInt32();
+
         // Scalar inputs...
-        this.scalarInputCnt = args[3].toInt32();
-        if (this.scalarInputCnt > 0){
-            this.scalarInput = args[2].readInt();
-        }
-        else{
-            this.scalarInput = 0;
-        }
-
-        //Struct inputs...
-        this.structInputCnt = args[5].toInt32();
-        if (this.structInputCnt > 0){
-            this.structInput = args[4];
-        }
-        else{
-            this.structInput = 0;
-        }
-
-
-        this.outputCnt = args[7];
-        if (!this.outputCnt.isNull()){
-            this.outputCnt = args[7].readInt();
-
-            this.output = args[6];
-            if (!this.output.isNull()){
-                this.output = args[6].readInt();
+        this.inputScalar = "0";
+        this.inputScalarCnt = args[3].toInt32();
+        if (this.inputScalarCnt > 0){
+            this.inputScalar = "["
+            for (let i = 0; i < this.inputScalarCnt; i++) {
+                this.inputScalar += args[2].add(0x8 * i).readInt().toString();
+                if (i !== this.inputScalarCnt - 1) {
+                    this.inputScalar += ",";
+                }
             }
-            else{
-                this.output = 0;
-            }
-        }
-        else{
-            this.outputCnt = 0;
-            this.output = 0;
+            this.inputScalar += "]"
         }
 
-        this.outputStructCnt = args[9];
-        if (!this.outputStructCnt.isNull()){
-            this.outputStructCnt = args[9].readInt();
-            this.outputStruct = args[8];
-        }
-        else{
-            this.outputStruct = 0;
-            this.outputStructCnt = 0;
-        }
+        // Struct inputs...
+        this.inputStructSize = args[5].toInt32();
+        this.inputStruct = args[4];
 
-        this.data = null;
-        if (this.structInput){
-            this.data = this.structInput.readByteArray(this.structInputCnt);
-            console.log(this.data);
-        }
+        // outputScalar
+        this.outputScalarCnt = args[7];
+        this.outputScalar = args[6];
 
-
+        // outputStruct
+        this.outputStructSize = args[9];
+        this.outputStruct = args[8];
     },
     onLeave: function(retval: NativePointer){
-        if (this.outputStruct){
-            if (this.data){
-                this.data = this.outputStruct.readByteArray(this.outputStructCnt);
-            }
-            else{
-                this.data = this.outputStruct.readByteArray(this.outputStructCnt);
-            }
-        }
-        if (this.data){
-            send({
-                type: 'IOKit',
-                symbol: this.name,
-                timestamp: Date.now(),
-                tid: Process.getCurrentThreadId(),
-                data: {
-                    args: [
-                        this.port,
-                        this.sel,
-                        this.scalarInput,
-                        this.scalarInputCnt,
-                        this.structInput,
-                        this.structInputCnt,
-                        this.output,
-                        this.outputCnt,
-                        this.outputStruct,
-                        this.outputStructCnt
-                    ],
-                    ret: retval
+        // outputScalar
+        var finalOutScalar = "0";
+        var finalOutScalarCnt = 0;
+        if (!this.outputScalarCnt.isNull()){
+            finalOutScalarCnt = this.outputScalarCnt.readInt();
+            if (finalOutScalarCnt > 0){
+                finalOutScalar = "["
+                for (let i = 0; i < finalOutScalarCnt; i++) {
+                    finalOutScalar += this.outputScalar.add(0x8 * i).readInt().toString();
+                    if (i !== finalOutScalarCnt - 1) {
+                        finalOutScalar += ",";
+                    }
                 }
-            }, this.data);
+                finalOutScalar += "]"
+            }
         }
-        else{
+
+        // Output Struct...
+        var outputStructSize = 0;
+        var outputStruct;
+        if (!this.outputStructSize.isNull()){
+            outputStructSize = this.outputStructSize.readInt();
+            if (outputStructSize > 0 && !this.outputStruct.isNull()){
+                if (outputStructSize > 10000){
+                    outputStructSize = 10000;
+                }
+                outputStruct = this.outputStruct.readByteArray(outputStructSize);
+            }
+        }
+
+        if (outputStructSize + this.inputStructSize == 0){
             send({
                 type: 'IOKit',
                 symbol: this.name,
@@ -231,40 +203,84 @@ const IOConnectCallMethod: IFunctionPointer = {
                     args: [
                         this.port,
                         this.sel,
-                        this.scalarInput,
-                        this.scalarInputCnt,
-                        this.structInput,
-                        this.structInputCnt,
-                        this.output,
-                        this.outputCnt,
-                        this.outputStruct,
-                        this.outputStructCnt
+                        this.inputScalar,
+                        this.inputScalarCnt,
+                        0,
+                        0,
+                        finalOutScalar,
+                        finalOutScalarCnt,
+                        0,
+                        0
                     ],
                     ret: retval
                 }
             });
         }
+        else{
+            var finalSize = outputStructSize + this.inputStructSize;
+            var p = Memory.alloc(finalSize);
 
+            if (this.inputStructSize > 0 && !this.inputStruct.isNull()){
+                p.writeByteArray(this.inputStruct.readByteArray(this.inputStructSize));
+            }
+
+            if (outputStructSize > 0){
+                if (this.inputStructSize > 0){
+                    p.add(this.inputStructSize).writeByteArray(this.outputStruct.readByteArray(outputStructSize));
+                }
+                else{
+                    p.writeByteArray(this.outputStruct.readByteArray(outputStructSize));
+                }
+            }
+
+            send({
+                type: 'IOKit',
+                symbol: this.name,
+                timestamp: Date.now(),
+                tid: Process.getCurrentThreadId(),
+                data: {
+                    args: [
+                        this.port,
+                        this.sel,
+                        this.inputScalar,
+                        this.inputScalarCnt,
+                        0,
+                        this.inputStructSize,
+                        finalOutScalar,
+                        finalOutScalarCnt,
+                        0,
+                        outputStructSize
+                    ],
+                    ret: retval
+                }
+            }, p.readByteArray(finalSize));
+        }
     }
 };
-
 
 const IOConnectCallScalarMethod: IFunctionPointer = {
     name: 'IOConnectCallScalarMethod',
     ptr: Module.getExportByName(libIOKit, "IOConnectCallScalarMethod"),
     onEnter: function(args: InvocationArguments){
         this.port = args[0];
-        this.output = args[4];
-        //this.outputCnt = args[5];
-        if (args[3].toInt32() > 0){
-            this.input = args[2];
-        }
-        else{
-            this.input = 0;
-        }
         this.sel = args[1].toInt32();
+        //this.output = args[4];
+        this.outputCnt = args[5];
+
+        this.input = 0;
+        this.output = 0;
+        if (args[3].toInt32() > 0){
+            //console.log("INPUT COUNT: ", args[3].toInt32());
+            //this.input = args[2].readPointer();
+        }
     },
     onLeave: function(retval: NativePointer){
+        if (!this.outputCnt.isNull()){
+            if (this.outputCnt.readInt() > 0){
+               //console.log("OUTPUT COUNT:", this.outputCnt.readInt());
+               //console.log("OUTPUT:", this.output);
+            }
+        }
         send({
 		    type: 'IOKit',
 		    symbol: this.name,
@@ -283,6 +299,8 @@ const IOConnectCallScalarMethod: IFunctionPointer = {
     }
 };
 
+/*
+IT SEEMS LIKE THIS METHOD INTERNALLY CALLS IOConnectCallMethod
 const IOConnectCallStructMethod: IFunctionPointer = {
     name: 'IOConnectCallStructMethod',
     ptr: Module.getExportByName(libIOKit, "IOConnectCallStructMethod"),
@@ -359,8 +377,6 @@ const IOConnectCallAsyncStructMethod: IFunctionPointer = {
     },
 };
 
-
-
 const IOServiceAddInterestNotification: IFunctionPointer = {
     name: 'IOServiceAddInterestNotification',
     ptr: Module.getExportByName(libIOKit, "IOServiceAddInterestNotification"),
@@ -377,7 +393,6 @@ const IOServiceAddInterestNotification: IFunctionPointer = {
     },
 };
 
-
 const IOConnectSetNotificationPort: IFunctionPointer = {
     name: 'IOConnectSetNotificationPort',
     ptr: Module.getExportByName(libIOKit, "IOConnectSetNotificationPort"),
@@ -392,23 +407,21 @@ const IOConnectSetNotificationPort: IFunctionPointer = {
             }
 	    });
     },
-};
+};*/
 
 
 export const IOKit_functions = [
     IOServiceMatching,
     IOServiceNameMatching,
     IOServiceGetMatchingService,
-
-    //IOServiceGetMatchingServices,
+    IOServiceGetMatchingServices,
 
     IOServiceOpen,
     //IOIteratorNext,
     IOConnectCallMethod,
+    IOConnectCallScalarMethod
 
-
-    /*IOConnectCallScalarMethod,
-    IOConnectCallStructMethod,
+    /*IOConnectCallStructMethod,
     IOConnectCallAsyncMethod,
     IOConnectCallAsyncScalarMethod,
     IOConnectCallAsyncStructMethod,

@@ -499,6 +499,55 @@ const NSURLResponse__initWithCFURLResponse_: IFunctionPointer = {
     }
 }
 
+const NSURLResponse__responseWithCFURLResponse_: IFunctionPointer = {
+    name: '+[NSURLResponse _responseWithCFURLResponse:]',
+    ptr: ObjC.classes.NSURLResponse['+ _responseWithCFURLResponse:'].implementation,
+    onLeave: function(retval: NativePointer){
+        let timestamp = Date.now();
+        let response = new ObjC.Object(retval);
+        let url = response.URL().toString();
+        let statusCode = response.statusCode();
+        let headers = response.allHeaderFields();
+        if (headers){
+            headers = ObjCObjectTOJSONString(headers);
+        }
+        send({
+            type: 'network',
+            timestamp: timestamp,
+            symbol: this.name,
+            tid: this.threadId,
+            data: {
+                args: [url, statusCode, headers]
+            }
+        });
+    }
+}
+
+const NSMutableURLRequest_setValue_forHTTPHeaderField_ : IFunctionPointer = {
+    name: '-[NSMutableURLRequest setValue:forHTTPHeaderField:]',
+    ptr: ObjC.classes.NSMutableURLRequest['- setValue:forHTTPHeaderField:'].implementation,
+    onEnter: function(args: InvocationArguments){
+        var value = new ObjC.Object(args[2]).toString();
+        if (value != 'nil'){
+            var header = new ObjC.Object(args[3]).toString();
+            var url = new ObjC.Object(args[0]).URL().toString();
+            send({
+                type: 'network',
+                timestamp: Date.now(),
+                symbol: this.name,
+                tid: this.threadId,
+                data: {
+                    args: [url, header, value]
+                }
+            });
+        }
+    },
+}
+
+
+
+
+
 
 export const network_functions = [
     //CFURLRequestSetHTTPRequestBody,
@@ -515,7 +564,12 @@ export const network_functions = [
     NSURLSession_downloadTaskWithRequest_completionHandler_,
 
     // RESPONSES
-    NSURLResponse__initWithCFURLResponse_
+    NSURLResponse__initWithCFURLResponse_,
+    //NSURLResponse__responseWithCFURLResponse_,
     //NSURLResponse__initWithInternal_,
     //NSCachedURLResponse_initWithResponse_data_userInfo_storagePolicy_,
+
+
+    //HEADERS
+    NSMutableURLRequest_setValue_forHTTPHeaderField_
 ]

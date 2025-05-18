@@ -11,7 +11,7 @@ import {
 const open: IFunctionPointer = {
     name: 'open',
     ptr: Module.getExportByName(libSystemKernelDylib, "open"),
-    onEnter: function(args: InvocationArguments){
+    /*onEnter: function(args: InvocationArguments){
         this.timestamp = Date.now();
         this.filepath = args[0].readUtf8String();
         this.mode = args[1].toString();
@@ -27,7 +27,51 @@ const open: IFunctionPointer = {
 		        ret: retval.toString(),
             }
 	    });
-    },
+    },*/
+    cm: new CModule(`
+        #include <stdio.h>
+        #include <gum/guminterceptor.h>
+
+        extern void send_func(void *, void *);
+
+        typedef struct _IcState IcState;
+        struct _IcState
+        {
+          gpointer path;
+          int mode;
+        };
+
+        void
+        on_enter(GumInvocationContext *ic)
+        {
+            IcState *is = GUM_IC_GET_INVOCATION_DATA(ic, IcState);
+            is->path = gum_invocation_context_get_nth_argument(ic, 0);
+            is->mode = GPOINTER_TO_INT(gum_invocation_context_get_nth_argument(ic, 1));
+        }
+
+        void
+        on_leave(GumInvocationContext *ic)
+        {
+            IcState *is = GUM_IC_GET_INVOCATION_DATA(ic, IcState);
+            gpointer retval = gum_invocation_context_get_return_value(ic);
+            send_func(is, retval);
+        }
+    `, {
+          send_func: new NativeCallback((args, retval) => {
+                send(
+                    {
+                        type: 'io',
+                        symbol: 'open',
+                        timestamp: Date.now(),
+                        tid: Process.getCurrentThreadId(),
+                        data: {
+                            args: [args.readPointer().readUtf8String(), "0x" + args.add(0x8).readInt()],
+                            ret: retval,
+                        }
+                    }
+                )
+          }, 'void', ['pointer', 'pointer'])
+    })
 };
 
 const read: IFunctionPointer = {

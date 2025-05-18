@@ -11,6 +11,8 @@ import { IOKit_functions } from './modules/IOKit';
 import { icloud_functions } from './modules/icloud';
 import { gestalt_functions } from './modules/gestalt';
 import { dyld_functions } from './modules/dyld';
+//import { call_functions } from './modules/call';
+import { syscall_functions } from './modules/syscall';
 
 //#IMPORT#//
 
@@ -23,21 +25,34 @@ function attach_interceptor_to_func(func) {
         return;
     }
 
-    Interceptor.attach(
-        func.ptr,
-        {
-            onEnter: function(args: InvocationArguments) {
-                if (func.onEnter){
-                    func.onEnter(args);
-                }
-            },
-            onLeave: function(retval: NativePointer){
-                if (func.onLeave){
-                    func.onLeave(retval);
+    if (func.cm){
+        console.log(func.name, func.cm.on_enter, func.cm.on_leave);
+        console.log(JSON.stringify(func.cm));
+        Interceptor.attach(
+            func.ptr,
+            {
+                onEnter: func.cm.on_enter,
+                onLeave: func.cm.on_leave
+            }
+        );
+    }
+    else{
+        Interceptor.attach(
+            func.ptr,
+            {
+                onEnter: function(args: InvocationArguments) {
+                    if (func.onEnter){
+                        func.onEnter(args);
+                    }
+                },
+                onLeave: function(retval: NativePointer){
+                    if (func.onLeave){
+                        func.onLeave(retval);
+                    }
                 }
             }
-        }
-    );
+        );
+    }
 }
 
 export function hook(modules: string[], customModules: string[]) {
@@ -88,6 +103,12 @@ export function hook(modules: string[], customModules: string[]) {
         }
         else if (x === "dyld"){
             dyld_functions.forEach(func => attach_interceptor_to_func(func));
+        }
+        /*else if (x === "call"){
+            call_functions.forEach(func => attach_interceptor_to_func(func));
+        }*/
+        else if (x === "syscall"){
+            syscall_functions.forEach(func => attach_interceptor_to_func(func));
         }
     });
 

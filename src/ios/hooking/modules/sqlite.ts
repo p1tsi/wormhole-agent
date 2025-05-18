@@ -500,8 +500,7 @@ const SQLiteColumnBlob: IFunctionPointer = {
             timestamp: this.timestamp,
             tid: Process.getCurrentThreadId(),
 		    data: {
-		        args: [this.column_id],
-		        ret: retval.toString(),
+		        args: [this.column_id]
 		    }
 	    }, blob);
     },

@@ -3,6 +3,7 @@ export interface IFunctionPointer {
     ptr: NativePointer,
     onEnter?,
     onLeave?,
+    cm?
 }
 
 /*export interface IMessage{
