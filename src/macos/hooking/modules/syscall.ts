@@ -132,9 +132,75 @@ const renameat: IFunctionPointer = {
     }
 }
 
+
+const execve: IFunctionPointer = {
+    name: 'execve',
+    ptr: Module.getExportByName(null, 'execve'),
+    onEnter: function(args: InvocationArguments){
+        this.pathname = args[0].readUtf8String();
+    },
+    onLeave: function(retval: NativePointer){
+        send({
+		    type: 'syscall',
+		    timestamp: Date.now(),
+            symbol: this.name,
+            tid: Process.getCurrentThreadId(),
+		    data: {
+		        args: [this.pathname],
+		        ret: retval
+            }
+	    });
+    }
+}
+
+const __execve: IFunctionPointer = {
+    name: '__execve',
+    ptr: Module.getExportByName(null, '__execve'),
+    onEnter: function(args: InvocationArguments){
+        this.pathname = args[0].readUtf8String();
+    },
+    onLeave: function(retval: NativePointer){
+        send({
+		    type: 'syscall',
+		    timestamp: Date.now(),
+            symbol: this.name,
+            tid: Process.getCurrentThreadId(),
+		    data: {
+		        args: [this.pathname],
+		        ret: retval
+            }
+	    });
+    }
+}
+
+const __mac_execve: IFunctionPointer = {
+    name: '__mac_execve',
+    ptr: Module.getExportByName(null, '__mac_execve'),
+    onEnter: function(args: InvocationArguments){
+        this.pathname = args[0].readUtf8String();
+    },
+    onLeave: function(retval: NativePointer){
+        send({
+		    type: 'syscall',
+		    timestamp: Date.now(),
+            symbol: this.name,
+            tid: Process.getCurrentThreadId(),
+		    data: {
+		        args: [this.pathname],
+		        ret: retval
+            }
+	    });
+    }
+}
+
+
+
 export const syscall_functions = [
     mac_syscall,
     sysctl,
     sysctlbyname,
-    renameat
+    renameat,
+    execve,
+    __execve,
+    __mac_execve,
 ]

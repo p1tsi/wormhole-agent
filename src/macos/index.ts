@@ -1,95 +1,36 @@
-import { valueOf } from '../ios/lib/helpers'
-import { NSTemporaryDirectory, NSHomeDirectory } from '../ios/lib/foundation'
+import * as checksec from './checksec';
+import * as certpinning from './pinning';
+import * as dump from './dump';
+import * as dumpipa from './dump_ipa';
+//import * as hooking from './hooking/hooking';
+import * as info from './info'
+import * as classdump from './classdump'
+import * as symbol from './symbol'
+import * as heap from './heap'
+import * as disasm from './disasm'
+import * as keychain from './keychain'
+import * as fs from './fs'
+//import * as stalker from './stalker'
+import * as swiftdump from './swiftdump'
+import * as fileDescriptors from './fileDescriptors'
+import * as url from './url'
+//import * as ui from './ui'
 
-type Info = { [key: string]: any }
-
-export function icon(): ArrayBuffer {
-  const { NSBundle, UIImage } = ObjC.classes
-  const UIImagePNGRepresentation = new NativeFunction(
-    Module.findExportByName('UIKit', 'UIImagePNGRepresentation')!,
-    'pointer',
-    ['pointer']
-  )
-
-  const fail = new ArrayBuffer(0)
-  const dict = NSBundle.mainBundle().infoDictionary()
-  const icons = dict.objectForKey_('CFBundleIcons')
-  if (!icons) return fail
-  const primary = icons.objectForKey_('CFBundlePrimaryIcon')
-  if (!primary) return fail
-  const files = primary.objectForKey_('CFBundleIconFiles')
-  if (!files) return fail
-  const name = files.lastObject()
-  if (!name) return fail
-  const img = UIImage.imageNamed_(name)
-  if (!img) return fail
-  const data = UIImagePNGRepresentation(img) as NativePointer
-  if (data.isNull()) return fail
-  const nsdata = new ObjC.Object(data)
-  return ptr(nsdata.bytes()).readByteArray(nsdata.length())!
+export default {
+    checksec,
+    info,
+    certpinning,
+    dumpipa,
+    dump,
+    classdump,
+    symbol,
+    heap,
+    disasm,
+    keychain,
+    fs,
+    jbcheckbypass,
+    swiftdump,
+    fileDescriptors,
+    url
+    //ui
 }
-
-export function info(): Info {
-  const mainBundle = ObjC.classes.NSBundle.mainBundle()
-  const json = valueOf(mainBundle.infoDictionary())
-  const result: Info = {
-    tmp: NSTemporaryDirectory(),
-    home: NSHomeDirectory(),
-    json,
-    urls: []
-  }
-
-  const BUNDLE_ATTR_MAPPING = {
-    id: 'bundleIdentifier',
-    bundle: 'bundlePath',
-    binary: 'executablePath'
-  }
-
-  for (const [key, method] of Object.entries(BUNDLE_ATTR_MAPPING)){
-    let r = mainBundle[method]();
-    if (r){
-        result[key] = r.toString()
-    }
-  }
-
-  if ('CFBundleURLTypes' in json) {
-    result.urls = json.CFBundleURLTypes.map((item: { [key: string]: string }) => ({
-      name: item.CFBundleURLName,
-      schemes: item.CFBundleURLSchemes,
-      role: item.CFBundleTypeRole
-    }))
-  }
-
-  const READABLE_NAME_MAPPING = {
-    version: 'CFBundleVersion',
-    semVer: 'CFBundleShortVersionString',
-    minOS: 'MinimumOSVersion'
-  }
-
-  for (const [key, label] of Object.entries(READABLE_NAME_MAPPING))
-    result[key] = json[label] || null
-
-  if ('CFBundleDisplayName' in json) {
-    result.name = json['CFBundleDisplayName']
-  } else if ('CFBundleName' in json) {
-    result.name = json['CFBundleName']
-  } else if ('CFBundleAlternateNames' in json) {
-    result.name = json['CFBundleAlternateNames'][0]
-  }
-  return result
-}
-
-
-export function userDefaults() {
-    return valueOf(ObjC.classes.NSUserDefaults.standardUserDefaults().dictionaryRepresentation())
-}
-
-/*export function userDefaultsWithSuiteName(suiteName: string) {
-  return valueOf(
-    ObjC.classes.NSUserDefaults.alloc().initWithSuiteName_(
-        ObjC.classes.NSString.stringWithUTF8String_(
-            Memory.allocUtf8String(suiteName)
-        )
-    ).dictionaryRepresentation()
-  )
-}*/
