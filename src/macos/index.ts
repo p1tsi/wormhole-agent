@@ -28,7 +28,6 @@ export default {
     disasm,
     keychain,
     fs,
-    jbcheckbypass,
     swiftdump,
     fileDescriptors,
     url

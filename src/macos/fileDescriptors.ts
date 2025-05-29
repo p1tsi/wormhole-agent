@@ -562,8 +562,8 @@ const error = new NativeCallback(
 
 
 const cm: CModule = new CModule(code, {
-    proc_pidinfo: Module.getExportByName(LIBPROC_PATH, 'proc_pidinfo'),
-    proc_pidfdinfo: Module.getExportByName(LIBPROC_PATH, 'proc_pidfdinfo'),
+    proc_pidinfo: Module.getExportByName(null, 'proc_pidinfo'),
+    proc_pidfdinfo: Module.getExportByName(null, 'proc_pidfdinfo'),
     malloc: Module.getExportByName(LIBSYSTEM_MALLOC_PATH, 'malloc'),
     snprintf: Module.getExportByName(null, 'snprintf'),
     inet_ntop: Module.getExportByName(null, 'inet_ntop'),
