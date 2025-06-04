@@ -193,7 +193,7 @@ export function parseXPCDictionaryObject(XPCMessage: NativePointer){
 
     let jsonData = ObjC.classes.NSJSONSerialization.dataWithJSONObject_options_error_(message, 0, ptr(0x0));
     let resultMessage = ObjC.classes.NSString.alloc().initWithData_encoding_(jsonData, 0x4);
-    console.log(">", resultMessage);
+    //console.log(">", resultMessage);
 
     return resultMessage.toString();
 }
