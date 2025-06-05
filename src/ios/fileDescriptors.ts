@@ -499,7 +499,7 @@ const LIBSYSTEM_MALLOC_PATH: string = '/usr/lib/system/libsystem_malloc.dylib';
 
 interface VnodeFileDescriptor {
     path: string,
-    type: string
+    //type: string
 }
 
 interface SocketFileDescriptor {
@@ -510,7 +510,7 @@ interface SocketFileDescriptor {
     rip: string,
     rport: number,
     fsp: string,
-    type: string
+    //type: string
 }
 
 var fds: Map<number, VnodeFileDescriptor | SocketFileDescriptor> = new Map();
@@ -520,7 +520,7 @@ const push_vnode = new NativeCallback(
         if (path.readUtf8String() !== '/dev/null'){
             fds.set(fd, {
                 "path": path.readUtf8String(),
-                "type": ProcFDType.Vnode,
+                //"type": ProcFDType.Vnode,
             });
         }
     },
@@ -547,7 +547,7 @@ const push_socket = new NativeCallback(
             // Remote port will be 0 when the FD represents a listening socket
             "rport": rport,
             "fsp": fsp.readUtf8String(),
-            "type": ProcFDType.Socket,
+            //"type": ProcFDType.Socket,
         });
     },
     'void', ['int32', 'pointer', 'pointer', 'int', 'pointer', 'pointer', 'int', 'pointer'] // TODO: more details?

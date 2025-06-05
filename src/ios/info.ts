@@ -36,7 +36,6 @@ export function info(): Info {
     tmp: NSTemporaryDirectory(),
     home: NSHomeDirectory(),
     json,
-    urls: []
   }
 
   const BUNDLE_ATTR_MAPPING = {
@@ -50,14 +49,6 @@ export function info(): Info {
     if (r){
         result[key] = r.toString()
     }
-  }
-
-  if ('CFBundleURLTypes' in json) {
-    result.urls = json.CFBundleURLTypes.map((item: { [key: string]: string }) => ({
-      name: item.CFBundleURLName,
-      schemes: item.CFBundleURLSchemes,
-      role: item.CFBundleTypeRole
-    }))
   }
 
   const READABLE_NAME_MAPPING = {

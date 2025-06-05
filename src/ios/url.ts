@@ -1,3 +1,26 @@
+import { valueOf } from './lib/helpers'
+
+type CustomUrls = { [key: string]: any }
+
+export function list(): CustomUrls {
+	const mainBundle = ObjC.classes.NSBundle.mainBundle()
+  	const json = valueOf(mainBundle.infoDictionary())
+
+	const result: CustomUrls = {}
+
+	if ('CFBundleURLTypes' in json) {
+    result.urls = json.CFBundleURLTypes.map((item: { [key: string]: string }) => ({
+      name: item.CFBundleURLName,
+      schemes: item.CFBundleURLSchemes,
+      role: item.CFBundleTypeRole
+    }))
+  }
+
+  return result
+}
+
+
+
 export function open(urlStr: string) {
 	const app = ObjC.classes.UIApplication.sharedApplication()
 
