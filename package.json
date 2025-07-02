@@ -1,0 +1,21 @@
+{
+  "name": "wormhole-agent",
+  "version": "0.1.0",
+  "description": "Agent script injected inside remote process",
+  "homepage": "*",
+  "main": "src/ios.ts",
+  "scripts": {
+    "build-ios": "frida-compile -S -c src/ios.ts -o ../agents/_ios_base_agent.js",
+    "build-macos": "frida-compile -S -c src/macos.ts -o ../agents/_macos_base_agent.js"
+  },
+  "author": "p1tsi",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "@types/frida-gum": "^19.0.0",
+    "@types/node": "^22.15.21",
+    "frida-compile": "^17.0.0"
+  },
+  "dependencies": {
+    "frida-objc-bridge": "^8.0.4"
+  }
+}
