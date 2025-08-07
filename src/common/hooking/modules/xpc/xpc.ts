@@ -1,7 +1,5 @@
 import ObjC from 'frida-objc-bridge';
 import { IFunctionPointer } from '../interfaces.js';
-import { xpc_dictionary_get_value } from './libFunctions.js'
-import { ObjCObjectTOJSONString } from '../../../lib/helpers.js';
 import {  parseXPCConnectionObject, parseXPCDictionaryObject } from './helper.js'
 
 import {

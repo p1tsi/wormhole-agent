@@ -1,18 +1,19 @@
-import { network_functions } from './modules/network';
-import { xpc_functions } from './modules/xpc/xpc';
-import { sqlite_functions } from './modules/sqlite';
+import { network_functions } from './modules/network.js';
+import { xpc_functions } from './modules/xpc/xpc.js';
+import { sqlite_functions } from './modules/sqlite.js';
 //import { sqlite_cipher_functions } from './modules/sqlite_cipher';
-import { user_defaults_functions } from './modules/userDefaults';
-import { notifications_functions } from './modules/notifications';
-import { keychain_functions } from './modules/keychain';
-import { encryption_functions } from './modules/encryption';
-import { io_functions } from './modules/io';
-import { IOKit_functions } from './modules/IOKit';
-import { icloud_functions } from './modules/icloud';
-import { gestalt_functions } from './modules/gestalt';
-import { dyld_functions } from './modules/dyld';
+import { user_defaults_functions } from './modules/userDefaults.js';
+import { notifications_functions } from './modules/notifications.js';
+import { keychain_functions } from './modules/keychain.js';
+import { encryption_functions } from './modules/encryption.js';
+import { io_functions } from './modules/io.js';
+import { IOKit_functions } from './modules/IOKit.js';
+import { icloud_functions } from './modules/icloud.js';
+import { gestalt_functions } from './modules/gestalt.js';
+import { dyld_functions } from './modules/dyld.js';
 //import { call_functions } from './modules/call';
-import { syscall_functions } from './modules/syscall';
+import { syscall_functions } from './modules/syscall.js';
+import { spawn_functions } from './modules/spawn.js'
 
 //#IMPORT#//
 
@@ -109,6 +110,9 @@ export function hook(modules: string[], customModules: string[]) {
         }*/
         else if (x === "syscall"){
             syscall_functions.forEach(func => attach_interceptor_to_func(func));
+        }
+        else if (x === "spawn"){
+            spawn_functions.forEach(func => attach_interceptor_to_func(func));
         }
     });
 

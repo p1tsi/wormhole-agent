@@ -18,6 +18,8 @@ const mac_syscall: IFunctionPointer = {
         this.arg = null;
         if (!args[2].isNull()){
             this.arg = args[2].toString();
+            //console.log(args[0].readUtf8String());
+            //console.log(hexdump(args[2]))
         }
     },
     onLeave: function(retval: NativePointer){
@@ -140,9 +142,105 @@ const renameat: IFunctionPointer = {
     }
 }
 
+const setxattr: IFunctionPointer = {
+    name: 'setxattr',
+    ptr: Process.getModuleByName("libsystem_kernel.dylib").getSymbolByName("setxattr"),
+    onEnter: function(args: InvocationArguments) {
+        let value = ObjC.classes.NSData.dataWithBytes_length_(args[2], args[3]);
+
+        send({
+		    type: 'syscall',
+		    timestamp: Date.now(),
+            symbol: this.name,
+            tid: Process.getCurrentThreadId(),
+		    data: {
+		        args: [
+                    args[0].readUtf8String(),   // path
+                    args[1].readUtf8String(),   // attrname
+                    value.base64EncodedStringWithOptions_(0).toString()     // value              
+                ],
+            }
+	    });
+    }
+}
+
+const getxattr: IFunctionPointer = {
+    name: 'getxattr',
+    ptr: Process.getModuleByName("libsystem_kernel.dylib").getSymbolByName("getxattr"),
+    onEnter: function(args: InvocationArguments) {
+        this.path = args[0].readUtf8String();
+        this.xattr_name = args[1].readUtf8String();
+        if (!args[2].isNull()){
+            this.value = args[2];
+            this.length = args[3].toInt32();
+        }
+    },
+    onLeave: function(retval: NativePointer){
+        var b64value;
+        if (this.value){
+            b64value = ObjC.classes.NSData.dataWithBytes_length_(this.value, this.length).base64EncodedStringWithOptions_(0).toString()
+        }
+        else{
+            b64value = ""
+        }
+
+        send({
+		    type: 'syscall',
+		    timestamp: Date.now(),
+            symbol: this.name,
+            tid: Process.getCurrentThreadId(),
+		    data: {
+		        args: [
+                    this.path,          // path
+                    this.xattr_name,    // attrname
+                    b64value            // value
+                ],
+                ret: retval
+            }
+	    });
+    }
+}
+
+const listxattr: IFunctionPointer = {
+    name: 'listxattr',
+    ptr: Process.getModuleByName("libsystem_kernel.dylib").getSymbolByName("listxattr"),
+    onEnter: function(args: InvocationArguments) {
+        this.path = args[0].readUtf8String();
+        this.xattr_name = args[1].readUtf8String();
+        if (!args[2].isNull()){
+
+        }
+        let value = ObjC.classes.NSData.dataWithBytes_length_(args[2], args[3]);
+
+
+    },
+    onLeave: function(retval: NativePointer){
+
+        send({
+		    type: 'syscall',
+		    timestamp: Date.now(),
+            symbol: this.name,
+            tid: Process.getCurrentThreadId(),
+		    data: {
+		        args: [
+                    this.path,          // path
+                    this.xattr_name,    // attrname
+                    //value.base64EncodedStringWithOptions_(0).toString()              
+                ],
+            }
+	    });
+    }
+}
+
+
+
+
 export const syscall_functions = [
     mac_syscall,
     sysctl,
     sysctlbyname,
-    renameat
+    renameat,
+    setxattr,
+    getxattr,
+    //listxattr
 ]
